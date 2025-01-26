@@ -196,6 +196,7 @@ typedef int ImGuiLayoutType;            // -> enum ImGuiLayoutType_         // E
 // Flags
 typedef int ImGuiActivateFlags;         // -> enum ImGuiActivateFlags_      // Flags: for navigation/focus function (will be for ActivateItem() later)
 typedef int ImGuiDebugLogFlags;         // -> enum ImGuiDebugLogFlags_      // Flags: for ShowDebugLogWindow(), g.DebugLogFlags
+typedef int ImGuiLayoutItemType;        // -> enum ImGuiLayoutItemType_     // Enum: Item or Spring
 typedef int ImGuiFocusRequestFlags;     // -> enum ImGuiFocusRequestFlags_  // Flags: for FocusWindow()
 typedef int ImGuiItemStatusFlags;       // -> enum ImGuiItemStatusFlags_    // Flags: for g.LastItemData.StatusFlags
 typedef int ImGuiOldColumnFlags;        // -> enum ImGuiOldColumnFlags_     // Flags: for BeginColumns()
@@ -1022,6 +1023,12 @@ enum ImGuiLayoutType_
     ImGuiLayoutType_Vertical = 1
 };
 
+enum ImGuiLayoutItemType_
+{
+    ImGuiLayoutItemType_Item,
+    ImGuiLayoutItemType_Spring
+};
+
 // Flags for LogBegin() text capturing function
 enum ImGuiLogFlags_
 {
@@ -1705,6 +1712,71 @@ struct IMGUI_API ImGuiTypingSelectState
 
     ImGuiTypingSelectState() { memset(this, 0, sizeof(*this)); }
     void            Clear()  { SearchBuffer[0] = 0; SingleCharModeLock = false; } // We preserve remaining data for easier debugging
+};
+
+struct ImGuiLayoutItem
+{
+    ImGuiLayoutItemType     Type;               // Type of an item
+    ImRect                  MeasuredBounds;
+
+    float                   SpringWeight;       // Weight of a spring
+    float                   SpringSpacing;      // Spring spacing
+    float                   SpringSize;         // Calculated spring size
+
+    float                   CurrentAlign;
+    float                   CurrentAlignOffset;
+
+    unsigned int            VertexIndexBegin;
+    unsigned int            VertexIndexEnd;
+
+    ImGuiLayoutItem(ImGuiLayoutItemType type)
+    {
+        Type = type;
+        MeasuredBounds = ImRect(0, 0, 0, 0);    // FIXME: @thedmd are you sure the default ImRect value FLT_MAX,FLT_MAX,-FLT_MAX,-FLT_MAX aren't enough here?
+        SpringWeight = 1.0f;
+        SpringSpacing = -1.0f;
+        SpringSize = 0.0f;
+        CurrentAlign = 0.0f;
+        CurrentAlignOffset = 0.0f;
+        VertexIndexBegin = VertexIndexEnd = (ImDrawIdx)0;
+    }
+};
+
+struct ImGuiLayout
+{
+    ImGuiID                     Id;
+    ImGuiLayoutType             Type;
+    bool                        Live;
+    ImVec2                      Size;               // Size passed to BeginLayout
+    ImVec2                      CurrentSize;        // Bounds of layout known at the beginning the frame.
+    ImVec2                      MinimumSize;        // Minimum possible size when springs are collapsed.
+    ImVec2                      MeasuredSize;       // Measured size with springs expanded.
+
+    ImVector<ImGuiLayoutItem>   Items;
+    int                         CurrentItemIndex;
+    int                         ParentItemIndex;
+    ImGuiLayout*                Parent;
+    ImGuiLayout*                FirstChild;
+    ImGuiLayout*                NextSibling;
+    float                       Align;              // Current item alignment.
+    float                       Indent;             // Indent used to align items in vertical layout.
+    ImVec2                      StartPos;           // Initial cursor position when BeginLayout is called.
+    ImVec2                      StartCursorMaxPos;  // Maximum cursor position when BeginLayout is called.
+
+    ImGuiLayout(ImGuiID id, ImGuiLayoutType type)
+    {
+        Id = id;
+        Type = type;
+        Live = false;
+        Size = CurrentSize = MinimumSize = MeasuredSize = ImVec2(0, 0);
+        CurrentItemIndex = 0;
+        ParentItemIndex = 0;
+        Parent = FirstChild = NextSibling = NULL;
+        Align = -1.0f;
+        Indent = 0.0f;
+        StartPos = ImVec2(0, 0);
+        StartCursorMaxPos = ImVec2(0, 0);
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -2668,6 +2740,10 @@ struct IMGUI_API ImGuiWindowTempData
     ImGuiLayoutType         LayoutType;
     ImGuiLayoutType         ParentLayoutType;       // Layout type of parent window at the time of Begin()
     ImU32                   ModalDimBgColor;
+    ImGuiLayout*            CurrentLayout;
+    ImGuiLayoutItem*        CurrentLayoutItem;
+    ImVector<ImGuiLayout*>  LayoutStack;
+    ImGuiStorage            Layouts;
 
     // Local parameters stacks
     // We store the current settings outside of the vectors to increase memory locality (reduce cache misses). The vectors are rarely modified. Also it allows us to not heap allocate for short-lived windows which are not using those settings.
