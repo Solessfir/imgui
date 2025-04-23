@@ -213,6 +213,10 @@ typedef int ImGuiTooltipFlags;          // -> enum ImGuiTooltipFlags_       // F
 typedef int ImGuiTypingSelectFlags;     // -> enum ImGuiTypingSelectFlags_  // Flags: for GetTypingSelectRequest()
 typedef int ImGuiWindowRefreshFlags;    // -> enum ImGuiWindowRefreshFlags_ // Flags: for SetNextWindowRefreshPolicy()
 
+// Table column indexing
+typedef ImS16 ImGuiTableColumnIdx;
+typedef ImU16 ImGuiTableDrawChannelIdx;
+
 //-----------------------------------------------------------------------------
 // [SECTION] Context pointer
 // See implementation of this variable in imgui.cpp for comments and details.
@@ -1321,7 +1325,8 @@ struct ImGuiTreeNodeStackData
     ImGuiItemFlags          ItemFlags;      // Used for nav landing
     ImRect                  NavRect;        // Used for nav landing
     float                   DrawLinesX1;
-    float                   DrawLinesY2;
+    float                   DrawLinesToNodesY2;
+    ImGuiTableColumnIdx     DrawLinesTableColumn;
 };
 
 // sizeof() = 20
@@ -2632,7 +2637,7 @@ struct ImGuiContext
     ImGuiTypingSelectState  TypingSelectState;                  // State for GetTypingSelectRequest()
 
     // Platform support
-    ImGuiPlatformImeData    PlatformImeData;                    // Data updated by current frame
+    ImGuiPlatformImeData    PlatformImeData;                    // Data updated by current frame. Will be applied at end of the frame. For some backends, this is required to have WantVisible=true in order to receive text message.
     ImGuiPlatformImeData    PlatformImeDataPrev;                // Previous frame data. When changed we call the platform_io.Platform_SetImeDataFn() handler.
     ImGuiID                 PlatformImeViewport;
 
@@ -2707,7 +2712,7 @@ struct ImGuiContext
     float                   FramerateSecPerFrameAccum;
     int                     WantCaptureMouseNextFrame;          // Explicit capture override via SetNextFrameWantCaptureMouse()/SetNextFrameWantCaptureKeyboard(). Default to -1.
     int                     WantCaptureKeyboardNextFrame;       // "
-    int                     WantTextInputNextFrame;
+    int                     WantTextInputNextFrame;             // Copied in EndFrame() from g.PlatformImeData.WanttextInput. Needs to be set for some backends (SDL3) to emit character inputs.
     ImVector<char>          TempBuffer;                         // Temporary text buffer
     char                    TempKeychordName[64];
 
@@ -2753,7 +2758,8 @@ struct IMGUI_API ImGuiWindowTempData
     ImVec2                  MenuBarOffset;          // MenuBarOffset.x is sort of equivalent of a per-layer CursorPos.x, saved/restored as we switch to the menu bar. The only situation when MenuBarOffset.y is > 0 if when (SafeAreaPadding.y > FramePadding.y), often used on TVs.
     ImGuiMenuColumns        MenuColumns;            // Simplified columns storage for menu items measurement
     int                     TreeDepth;              // Current tree depth.
-    ImU32                   TreeHasStackDataDepthMask; // Store whether given depth has ImGuiTreeNodeStackData data. Could be turned into a ImU64 if necessary.
+    ImU32                   TreeHasStackDataDepthMask;      // Store whether given depth has ImGuiTreeNodeStackData data. Could be turned into a ImU64 if necessary.
+    ImU32                   TreeRecordsClippedNodesY2Mask;  // Store whether we should keep recording Y2. Cleared when passing clip max. Equivalent TreeHasStackDataDepthMask value should always be set.
     ImVector<ImGuiWindow*>  ChildWindows;
     ImGuiStorage*           StateStorage;           // Current persistent per-window storage (store e.g. tree node open/close state)
     ImGuiOldColumns*        CurrentColumns;         // Current columns set
@@ -3018,11 +3024,7 @@ struct IMGUI_API ImGuiTabBar
 //-----------------------------------------------------------------------------
 
 #define IM_COL32_DISABLE                IM_COL32(0,0,0,1)   // Special sentinel code which cannot be used as a regular color.
-#define IMGUI_TABLE_MAX_COLUMNS         512                 // May be further lifted
-
-// Our current column maximum is 64 but we may raise that in the future.
-typedef ImS16 ImGuiTableColumnIdx;
-typedef ImU16 ImGuiTableDrawChannelIdx;
+#define IMGUI_TABLE_MAX_COLUMNS         512                 // Arbitrary "safety" maximum, may be lifted in the future if needed. Must fit in ImGuiTableColumnIdx/ImGuiTableDrawChannelIdx.
 
 // [Internal] sizeof() ~ 112
 // We use the terminology "Enabled" to refer to a column that is not Hidden by user/api.
@@ -3717,6 +3719,8 @@ namespace ImGui
     IMGUI_API float         TableGetHeaderAngledMaxLabelWidth();
     IMGUI_API void          TablePushBackgroundChannel();
     IMGUI_API void          TablePopBackgroundChannel();
+    IMGUI_API void          TablePushColumnChannel(int column_n);
+    IMGUI_API void          TablePopColumnChannel();
     IMGUI_API void          TableAngledHeadersRowEx(ImGuiID row_id, float angle, float max_label_width, const ImGuiTableHeaderData* data, int data_count);
 
     // Tables: Internals
@@ -3795,7 +3799,7 @@ namespace ImGui
     IMGUI_API void          RenderTextWrapped(ImVec2 pos, const char* text, const char* text_end, float wrap_width);
     IMGUI_API void          RenderTextClipped(const ImVec2& pos_min, const ImVec2& pos_max, const char* text, const char* text_end, const ImVec2* text_size_if_known, const ImVec2& align = ImVec2(0, 0), const ImRect* clip_rect = NULL);
     IMGUI_API void          RenderTextClippedEx(ImDrawList* draw_list, const ImVec2& pos_min, const ImVec2& pos_max, const char* text, const char* text_end, const ImVec2* text_size_if_known, const ImVec2& align = ImVec2(0, 0), const ImRect* clip_rect = NULL);
-    IMGUI_API void          RenderTextEllipsis(ImDrawList* draw_list, const ImVec2& pos_min, const ImVec2& pos_max, float clip_max_x, float ellipsis_max_x, const char* text, const char* text_end, const ImVec2* text_size_if_known);
+    IMGUI_API void          RenderTextEllipsis(ImDrawList* draw_list, const ImVec2& pos_min, const ImVec2& pos_max, float ellipsis_max_x, const char* text, const char* text_end, const ImVec2* text_size_if_known);
     IMGUI_API void          RenderFrame(ImVec2 p_min, ImVec2 p_max, ImU32 fill_col, bool borders = true, float rounding = 0.0f);
     IMGUI_API void          RenderFrameBorder(ImVec2 p_min, ImVec2 p_max, float rounding = 0.0f);
     IMGUI_API void          RenderColorRectWithAlphaCheckerboard(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, ImU32 fill_col, float grid_step, ImVec2 grid_off, float rounding = 0.0f, ImDrawFlags flags = 0);
@@ -3816,8 +3820,12 @@ namespace ImGui
     IMGUI_API void          RenderRectFilledWithHole(ImDrawList* draw_list, const ImRect& outer, const ImRect& inner, ImU32 col, float rounding);
     IMGUI_API ImDrawFlags   CalcRoundingFlagsForRectInRect(const ImRect& r_in, const ImRect& r_outer, float threshold);
 
-    // Widgets
+    // Widgets: Text
     IMGUI_API void          TextEx(const char* text, const char* text_end = NULL, ImGuiTextFlags flags = 0);
+    IMGUI_API void          TextAligned(float align_x, float size_x, const char* fmt, ...);               // FIXME-WIP: Works but API is likely to be reworked. This is designed for 1 item on the line. (#7024)
+    IMGUI_API void          TextAlignedV(float align_x, float size_x, const char* fmt, va_list args);
+
+    // Widgets
     IMGUI_API bool          ButtonEx(const char* label, const ImVec2& size_arg = ImVec2(0, 0), ImGuiButtonFlags flags = 0);
     IMGUI_API bool          ArrowButtonEx(const char* str_id, ImGuiDir dir, ImVec2 size_arg, ImGuiButtonFlags flags = 0);
     IMGUI_API bool          ImageButtonEx(ImGuiID id, ImTextureID user_texture_id, const ImVec2& image_size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& bg_col, const ImVec4& tint_col, ImGuiButtonFlags flags = 0);
@@ -3844,6 +3852,8 @@ namespace ImGui
 
     // Widgets: Tree Nodes
     IMGUI_API bool          TreeNodeBehavior(ImGuiID id, ImGuiTreeNodeFlags flags, const char* label, const char* label_end = NULL);
+    IMGUI_API void          TreeNodeDrawLineToChildNode(const ImVec2& target_pos);
+    IMGUI_API void          TreeNodeDrawLineToTreePop(const ImGuiTreeNodeStackData* data);
     IMGUI_API void          TreePushOverrideID(ImGuiID id);
     IMGUI_API bool          TreeNodeGetOpen(ImGuiID storage_id);
     IMGUI_API void          TreeNodeSetOpen(ImGuiID storage_id, bool open);

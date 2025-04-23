@@ -8500,6 +8500,21 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
             ImGui::SliderAngle("TableAngledHeadersAngle", &style.TableAngledHeadersAngle, -50.0f, +50.0f);
             ImGui::SliderFloat2("TableAngledHeadersTextAlign", (float*)&style.TableAngledHeadersTextAlign, 0.0f, 1.0f, "%.2f");
 
+            ImGui::SeparatorText("Trees");
+            bool combo_open = ImGui::BeginCombo("TreeLinesFlags", GetTreeLinesFlagsName(style.TreeLinesFlags));
+            ImGui::SameLine();
+            HelpMarker("[Experimental] Tree lines may not work in all situations (e.g. using a clipper) and may incurs slight traversal overhead.\n\nImGuiTreeNodeFlags_DrawLinesFull is faster than ImGuiTreeNodeFlags_DrawLinesToNode.");
+            if (combo_open)
+            {
+                const ImGuiTreeNodeFlags options[] = { ImGuiTreeNodeFlags_DrawLinesNone, ImGuiTreeNodeFlags_DrawLinesFull, ImGuiTreeNodeFlags_DrawLinesToNodes };
+                for (ImGuiTreeNodeFlags option : options)
+                    if (ImGui::Selectable(GetTreeLinesFlagsName(option), style.TreeLinesFlags == option))
+                        style.TreeLinesFlags = option;
+                ImGui::EndCombo();
+            }
+            ImGui::SliderFloat("TreeLinesSize", &style.TreeLinesSize, 0.0f, 2.0f, "%.0f");
+            ImGui::SliderFloat("TreeLinesRounding", &style.TreeLinesRounding, 0.0f, 12.0f, "%.0f");
+
             ImGui::SeparatorText("Windows");
             ImGui::SliderFloat2("WindowTitleAlign", (float*)&style.WindowTitleAlign, 0.0f, 1.0f, "%.2f");
             ImGui::SliderFloat("WindowBorderHoverPadding", &style.WindowBorderHoverPadding, 1.0f, 20.0f, "%.0f");
@@ -8508,15 +8523,6 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
                 style.WindowMenuButtonPosition = (ImGuiDir)(window_menu_button_position - 1);
 
             ImGui::SeparatorText("Widgets");
-            if (ImGui::BeginCombo("TreeLinesFlags", GetTreeLinesFlagsName(style.TreeLinesFlags)))
-            {
-                const ImGuiTreeNodeFlags options[] = { ImGuiTreeNodeFlags_DrawLinesNone, ImGuiTreeNodeFlags_DrawLinesFull, ImGuiTreeNodeFlags_DrawLinesToNodes };
-                for (ImGuiTreeNodeFlags option : options)
-                    if (ImGui::Selectable(GetTreeLinesFlagsName(option), style.TreeLinesFlags == option))
-                        style.TreeLinesFlags = option;
-                ImGui::EndCombo();
-            }
-            ImGui::SliderFloat("TreeLinesSize", &style.TreeLinesSize, 0.0f, 1.0f, "%.0f");
             ImGui::Combo("ColorButtonPosition", (int*)&style.ColorButtonPosition, "Left\0Right\0");
             ImGui::SliderFloat2("ButtonTextAlign", (float*)&style.ButtonTextAlign, 0.0f, 1.0f, "%.2f");
             ImGui::SameLine(); HelpMarker("Alignment applies when a button is larger than its text content.");
@@ -8529,7 +8535,7 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
             ImGui::SliderFloat("ImageBorderSize", &style.ImageBorderSize, 0.0f, 1.0f, "%.0f");
 
             ImGui::SeparatorText("Docking");
-            ImGui::SliderFloat("DockingSplitterSize", &style.DockingSeparatorSize, 0.0f, 12.0f, "%.0f");
+            ImGui::SliderFloat("DockingSeparatorSize", &style.DockingSeparatorSize, 0.0f, 12.0f, "%.0f");
 
             ImGui::SeparatorText("Tooltips");
             for (int n = 0; n < 2; n++)
