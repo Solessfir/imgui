@@ -24,6 +24,8 @@ project "ImGui"
         "backends/imgui_impl_glfw.cpp",
         "backends/imgui_impl_opengl3.h",
         "backends/imgui_impl_opengl3.cpp",
+        "backends/imgui_impl_vulkan.h",
+        "backends/imgui_impl_vulkan.cpp",
         "misc/cpp/imgui_stdlib.h",
         "misc/cpp/imgui_stdlib.cpp",
     }
