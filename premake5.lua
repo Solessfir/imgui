@@ -4,8 +4,16 @@ project "ImGui"
     cppdialect "C++23"
     staticruntime "off"
 
-    targetdir ("../../Binaries/" .. outputdir .. "/%{prj.name}")
-    objdir ("../../Intermediate/" .. outputdir .. "/%{prj.name}")
+    targetdir ("../../../Binaries/" .. outputdir .. "/%{prj.name}")
+    objdir ("../../../Intermediate/" .. outputdir .. "/%{prj.name}")
+
+    local vulkanVersion = "1.4.321.1"
+
+    if os.target() == "windows" then
+        VULKAN_SDK = path.getabsolute("../VulkanSDK/" .. vulkanVersion)
+    else
+        VULKAN_SDK = path.getabsolute("../VulkanSDK/" .. vulkanVersion .. "/x86_64")
+    end
 
     files
     {
@@ -34,6 +42,8 @@ project "ImGui"
     {
         "../ImGui",
         "../GLFW/include",
+        "../GLFW/include",
+        VULKAN_SDK .. "/Include"
     }
 
     filter "system:windows"
