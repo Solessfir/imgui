@@ -7,16 +7,7 @@ project "ImGui"
     targetdir ("../../../Binaries/" .. outputdir .. "/%{prj.name}")
     objdir ("../../../Intermediate/" .. outputdir .. "/%{prj.name}")
 
-    local vulkanVersion = "1.4.321.1"
-
-    if os.target() == "windows" then
-        VULKAN_SDK = path.getabsolute("../VulkanSDK/" .. vulkanVersion)
-    else
-        VULKAN_SDK = path.getabsolute("../VulkanSDK/" .. vulkanVersion .. "/x86_64")
-    end
-
-    files
-    {
+    files {
         "imgui.h",
         "imgui.cpp",
         "imgui_internal.h",
@@ -30,30 +21,28 @@ project "ImGui"
         "imgui_demo.cpp",
         "backends/imgui_impl_glfw.h",
         "backends/imgui_impl_glfw.cpp",
-        "backends/imgui_impl_opengl3.h",
-        "backends/imgui_impl_opengl3.cpp",
         "backends/imgui_impl_vulkan.h",
         "backends/imgui_impl_vulkan.cpp",
         "misc/cpp/imgui_stdlib.h",
         "misc/cpp/imgui_stdlib.cpp",
     }
 
-    includedirs
-    {
+    includedirs {
         "../ImGui",
-        "../GLFW/include",
         "../GLFW/include",
         VULKAN_SDK .. "/Include"
     }
 
     filter "system:windows"
         systemversion "latest"
-        cppdialect "C++20"
+        cppdialect "C++23"
+        defines { "_GLFW_WIN32" }
 
     filter "system:linux"
         pic "On"
         systemversion "latest"
-        cppdialect "C++20"
+        cppdialect "C++23"
+        defines { "_GLFW_WAYLAND" }
 
     filter "configurations:Debug"
         runtime "Debug"
