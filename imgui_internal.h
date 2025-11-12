@@ -291,7 +291,7 @@ extern IMGUI_API ImGuiContext* GImGui;  // Current implicit context pointer
 #define IM_TRUNC(_VAL)                  ((float)(int)(_VAL))                                    // ImTrunc() is not inlined in MSVC debug builds
 #define IM_ROUND(_VAL)                  ((float)(int)((_VAL) + 0.5f))                           //
 #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
-#define IM_FLOOR IM_TRUNC
+#define IM_FLOOR IM_TRUNC               // [OBSOLETE] Renamed in 1.90.0 (Sept 2023)
 #endif
 
 // Hint for branch prediction
@@ -2657,7 +2657,8 @@ struct ImGuiContext
     ImRect                  DragDropTargetClipRect;             // Store ClipRect at the time of item's drawing
     ImGuiID                 DragDropTargetId;
     ImGuiID                 DragDropTargetFullViewport;
-    ImGuiDragDropFlags      DragDropAcceptFlags;
+    ImGuiDragDropFlags      DragDropAcceptFlagsCurr;
+    ImGuiDragDropFlags      DragDropAcceptFlagsPrev;
     float                   DragDropAcceptIdCurrRectSurface;    // Target item surface (we resolve overlapping targets by prioritizing the smaller surface)
     ImGuiID                 DragDropAcceptIdCurr;               // Target item id (set at the time of accepting the payload)
     ImGuiID                 DragDropAcceptIdPrev;               // Target item id from previous frame (we need to store this to allow for overlapping drag and drop targets)
@@ -2826,6 +2827,7 @@ struct ImGuiContext
     char                    TempKeychordName[64];
 
     ImGuiContext(ImFontAtlas* shared_font_atlas);
+    ~ImGuiContext();
 };
 
 //-----------------------------------------------------------------------------
@@ -3005,7 +3007,7 @@ struct IMGUI_API ImGuiWindow
     ImGuiWindow*            RootWindowDockTree;                 // Point to ourself or first ancestor that is not a child window. Cross through dock nodes.
     ImGuiWindow*            RootWindowForTitleBarHighlight;     // Point to ourself or first ancestor which will display TitleBgActive color when this window is active.
     ImGuiWindow*            RootWindowForNav;                   // Point to ourself or first ancestor which doesn't have the NavFlattened flag.
-    ImGuiWindow*            ParentWindowForFocusRoute;          // Set to manual link a window to its logical parent so that Shortcut() chain are honoerd (e.g. Tool linked to Document)
+    ImGuiWindow*            ParentWindowForFocusRoute;          // Set to manual link a window to its logical parent so that Shortcut() chain are honored (e.g. Tool linked to Document)
 
     ImGuiWindow*            NavLastChildNavWindow;              // When going to the menu bar, we remember the child window we came from. (This could probably be made implicit if we kept g.Windows sorted by last focused including child window.)
     ImGuiID                 NavLastIds[ImGuiNavLayer_COUNT];    // Last known NavId for this window, per layer (0/1)
@@ -3043,7 +3045,7 @@ public:
     ImRect      TitleBarRect() const    { return ImRect(Pos, ImVec2(Pos.x + SizeFull.x, Pos.y + TitleBarHeight)); }
     ImRect      MenuBarRect() const     { float y1 = Pos.y + TitleBarHeight; return ImRect(Pos.x, y1, Pos.x + SizeFull.x, y1 + MenuBarHeight); }
 
-    // [Obsolete] ImGuiWindow::CalcFontSize() was removed in 1.92.x because error-prone/misleading. You can use window->FontRefSize for a copy of g.FontSize at the time of the last Begin() call for this window.
+    // [OBSOLETE] ImGuiWindow::CalcFontSize() was removed in 1.92.0 because error-prone/misleading. You can use window->FontRefSize for a copy of g.FontSize at the time of the last Begin() call for this window.
     //float     CalcFontSize() const    { ImGuiContext& g = *Ctx; return g.FontSizeBase * FontWindowScale * FontDpiScale * FontWindowScaleParents;
 };
 
@@ -3338,7 +3340,7 @@ struct IMGUI_API ImGuiTable
     bool                        IsContextPopupOpen;         // Set when default context menu is open (also see: ContextPopupColumn, InstanceInteracted).
     bool                        DisableDefaultContextMenu;  // Disable default context menu. You may submit your own using TableBeginContextMenuPopup()/EndPopup()
     bool                        IsSettingsRequestLoad;
-    bool                        IsSettingsDirty;            // Set when table settings have changed and needs to be reported into ImGuiTableSetttings data.
+    bool                        IsSettingsDirty;            // Set when table settings have changed and needs to be reported into ImGuiTableSettings data.
     bool                        IsDefaultDisplayOrder;      // Set when display order is unchanged from default (DisplayOrder contains 0...Count-1)
     bool                        IsResetAllRequest;
     bool                        IsResetDisplayOrderRequest;
@@ -3702,7 +3704,7 @@ namespace ImGui
     //   Legacy functions use ImGuiKeyOwner_Any meaning that they typically ignore ownership, unless a call to SetKeyOwner() explicitly used ImGuiInputFlags_LockThisFrame or ImGuiInputFlags_LockUntilRelease.
     // - Binding generators may want to ignore those for now, or suffix them with Ex() until we decide if this gets moved into public API.
     IMGUI_API bool          IsKeyDown(ImGuiKey key, ImGuiID owner_id);
-    IMGUI_API bool          IsKeyPressed(ImGuiKey key, ImGuiInputFlags flags, ImGuiID owner_id = 0);    // Important: when transitioning from old to new IsKeyPressed(): old API has "bool repeat = true", so would default to repeat. New API requiress explicit ImGuiInputFlags_Repeat.
+    IMGUI_API bool          IsKeyPressed(ImGuiKey key, ImGuiInputFlags flags, ImGuiID owner_id = 0);    // Important: when transitioning from old to new IsKeyPressed(): old API has "bool repeat = true", so would default to repeat. New API requires explicit ImGuiInputFlags_Repeat.
     IMGUI_API bool          IsKeyReleased(ImGuiKey key, ImGuiID owner_id);
     IMGUI_API bool          IsKeyChordPressed(ImGuiKeyChord key_chord, ImGuiInputFlags flags, ImGuiID owner_id = 0);
     IMGUI_API bool          IsMouseDown(ImGuiMouseButton button, ImGuiID owner_id);
