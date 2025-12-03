@@ -1,27 +1,28 @@
-// dear imgui, v1.92.5 WIP
+// dear imgui, v1.92.6 WIP
 // (main code and documentation)
 
 // Help:
-// - See links below.
 // - Call and read ImGui::ShowDemoWindow() in imgui_demo.cpp. All applications in examples/ are doing that.
 // - Read top of imgui.cpp for more details, links and comments.
+// - Add '#define IMGUI_DEFINE_MATH_OPERATORS' before including imgui.h (or in imconfig.h) to access courtesy maths operators for ImVec2 and ImVec4.
 
 // Resources:
 // - FAQ ........................ https://dearimgui.com/faq (in repository as docs/FAQ.md)
 // - Homepage ................... https://github.com/ocornut/imgui
-// - Releases & changelog ....... https://github.com/ocornut/imgui/releases
+// - Releases & Changelog ....... https://github.com/ocornut/imgui/releases
 // - Gallery .................... https://github.com/ocornut/imgui/issues?q=label%3Agallery (please post your screenshots/video there!)
 // - Wiki ....................... https://github.com/ocornut/imgui/wiki (lots of good stuff there)
 //   - Getting Started            https://github.com/ocornut/imgui/wiki/Getting-Started (how to integrate in an existing app by adding ~25 lines of code)
 //   - Third-party Extensions     https://github.com/ocornut/imgui/wiki/Useful-Extensions (ImPlot & many more)
-//   - Bindings/Backends          https://github.com/ocornut/imgui/wiki/Bindings (language bindings, backends for various tech/engines)
-//   - Glossary                   https://github.com/ocornut/imgui/wiki/Glossary
+//   - Bindings/Backends          https://github.com/ocornut/imgui/wiki/Bindings (language bindings + backends for various tech/engines)
 //   - Debug Tools                https://github.com/ocornut/imgui/wiki/Debug-Tools
+//   - Glossary                   https://github.com/ocornut/imgui/wiki/Glossary
 //   - Software using Dear ImGui  https://github.com/ocornut/imgui/wiki/Software-using-dear-imgui
 // - Issues & support ........... https://github.com/ocornut/imgui/issues
 // - Test Engine & Automation ... https://github.com/ocornut/imgui_test_engine (test suite, test engine to automate your apps)
+// - Web version of the Demo .... https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html (w/ source code browser)
 
-// For first-time users having issues compiling/linking/running:
+// For FIRST-TIME users having issues compiling/linking/running:
 // please post in https://github.com/ocornut/imgui/discussions if you cannot find a solution in resources above.
 // Everything else should be asked in 'Issues'! We are building a database of cross-linked knowledge there.
 // Since 1.92, we encourage font loading questions to also be posted in 'Issues'.
@@ -124,7 +125,7 @@ CODE
  Designed primarily for developers and content-creators, not the typical end-user!
  Some of the current weaknesses (which we aim to address in the future) includes:
 
- - Doesn't look fancy.
+ - Doesn't look fancy by default.
  - Limited layout features, intricate layouts are typically crafted in code.
 
 
@@ -149,7 +150,8 @@ CODE
    - Ctrl+Z                         Undo.
    - Ctrl+Y or Ctrl+Shift+Z:        Redo.
    - ESCAPE:                        Revert text to its original value.
-   - On OSX, controls are automatically adjusted to match standard OSX text editing 2ts and behaviors.
+   - On macOS, controls are automatically adjusted to match standard macOS text editing and behaviors.
+     (for 99% of shortcuts, Ctrl is replaced by Cmd on macOS).
 
  - KEYBOARD CONTROLS
    - Basic:
@@ -202,7 +204,7 @@ CODE
 
  READ FIRST
  ----------
- - Remember to check the wonderful Wiki (https://github.com/ocornut/imgui/wiki)
+ - Remember to check the wonderful Wiki: https://github.com/ocornut/imgui/wiki
  - Your code creates the UI every frame of your application loop, if your code doesn't run the UI is gone!
    The UI can be highly dynamic, there are no construction or destruction steps, less superfluous
    data retention on your side, less state duplication, less state synchronization, fewer bugs.
@@ -535,6 +537,7 @@ IMPLEMENTING SUPPORT for ImGuiBackendFlags_RendererHasTextures:
  - 2024/11/06 (1.91.5) - commented/obsoleted out pre-1.87 IO system (equivalent to using IMGUI_DISABLE_OBSOLETE_KEYIO or IMGUI_DISABLE_OBSOLETE_FUNCTIONS before)
                             - io.KeyMap[] and io.KeysDown[] are removed (obsoleted February 2022).
                             - io.NavInputs[] and ImGuiNavInput are removed (obsoleted July 2022).
+                            - GetKeyIndex() is removed (obsoleted March 2022). The indirection is now unnecessary.
                             - pre-1.87 backends are not supported:
                                - backends need to call io.AddKeyEvent(), io.AddMouseEvent() instead of writing to io.KeysDown[], io.MouseDown[] fields.
                                - backends need to call io.AddKeyAnalogEvent() for gamepad values instead of writing to io.NavInputs[] fields.
@@ -2115,7 +2118,7 @@ bool ImTriangleContainsPoint(const ImVec2& a, const ImVec2& b, const ImVec2& c, 
     bool b1 = ((p.x - b.x) * (a.y - b.y) - (p.y - b.y) * (a.x - b.x)) < 0.0f;
     bool b2 = ((p.x - c.x) * (b.y - c.y) - (p.y - c.y) * (b.x - c.x)) < 0.0f;
     bool b3 = ((p.x - a.x) * (c.y - a.y) - (p.y - a.y) * (c.x - a.x)) < 0.0f;
-    return ((b1 == b2) && (b2 == b3));
+    return (b1 == b2) && (b2 == b3);
 }
 
 void ImTriangleBarycentricCoords(const ImVec2& a, const ImVec2& b, const ImVec2& c, const ImVec2& p, float& out_u, float& out_v, float& out_w)
@@ -3215,7 +3218,7 @@ IM_MSVC_RUNTIME_CHECKS_RESTORE
 static bool GetSkipItemForListClipping()
 {
     ImGuiContext& g = *GImGui;
-    return (g.CurrentTable ? g.CurrentTable->HostSkipItems : g.CurrentWindow->SkipItems);
+    return g.CurrentTable ? g.CurrentTable->HostSkipItems : g.CurrentWindow->SkipItems;
 }
 
 static void ImGuiListClipper_SortAndFuseRanges(ImVector<ImGuiListClipperRange>& ranges, int offset = 0)
@@ -4440,7 +4443,7 @@ void ImGui::Initialize()
     g.ViewportCreatedCount++;
     g.PlatformIO.Viewports.push_back(g.Viewports[0]);
 
-    // Build KeysMayBeCharInput[] lookup table (1 bool per named key)
+    // Build KeysMayBeCharInput[] lookup table (1 bit per named key)
     for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; key = (ImGuiKey)(key + 1))
         if ((key >= ImGuiKey_0 && key <= ImGuiKey_9) || (key >= ImGuiKey_A && key <= ImGuiKey_Z) || (key >= ImGuiKey_Keypad0 && key <= ImGuiKey_Keypad9)
             || key == ImGuiKey_Tab || key == ImGuiKey_Space || key == ImGuiKey_Apostrophe || key == ImGuiKey_Comma || key == ImGuiKey_Minus || key == ImGuiKey_Period
@@ -4564,6 +4567,13 @@ void ImGui::Shutdown()
     g.DebugLogIndex.clear();
 
     g.Initialized = false;
+}
+
+// When using multiple context it can be helpful to give name a name.
+// (A) Will be visible in debugger, (B) Will be included in all IMGUI_DEBUG_LOG() calls, (C) Should be <= 15 characters long.
+void ImGui::SetContextName(ImGuiContext* ctx, const char* name)
+{
+    ImStrncpy(ctx->ContextName, name, IM_ARRAYSIZE(ctx->ContextName));
 }
 
 // No specific ordering/dependency support, will see as needed
@@ -5491,7 +5501,7 @@ static void ScaleWindow(ImGuiWindow* window, float scale)
 
 static bool IsWindowActiveAndVisible(ImGuiWindow* window)
 {
-    return (window->Active) && (!window->Hidden);
+    return window->Active && !window->Hidden;
 }
 
 // The reason this is exposed in imgui_internal.h is: on touch-based system that don't have hovering, we want to dispatch inputs to the right target (imgui vs imgui+app)
@@ -5742,22 +5752,6 @@ void ImGui::NewFrame()
             g.HoverItemDelayTimer = g.HoverItemDelayClearTimer = 0.0f; // May want a decaying timer, in which case need to clamp at max first, based on max of caller last requested timer.
     }
 
-    // Drag and drop
-    g.DragDropAcceptIdPrev = g.DragDropAcceptIdCurr;
-    g.DragDropAcceptIdCurr = 0;
-    g.DragDropAcceptFlagsPrev = g.DragDropAcceptFlagsCurr;
-    g.DragDropAcceptFlagsCurr = ImGuiDragDropFlags_None;
-    g.DragDropAcceptIdCurrRectSurface = FLT_MAX;
-    g.DragDropWithinSource = false;
-    g.DragDropWithinTarget = false;
-    g.DragDropHoldJustPressedId = 0;
-    if (g.DragDropActive && IsKeyPressed(ImGuiKey_Escape, ImGuiInputFlags_None, g.ActiveId)) // Also works when g.ActiveId==0 (aka leftover payload in progress, no active id)
-    {
-        ClearActiveID();
-        ClearDragDrop();
-    }
-    g.TooltipPreviousWindow = NULL;
-
     // Close popups on focus lost (currently wip/opt-in)
     //if (g.IO.AppFocusLost)
     //    ClosePopupsExceptModals();
@@ -5769,6 +5763,30 @@ void ImGui::NewFrame()
     //IM_ASSERT(g.IO.KeyShift == IsKeyDown(ImGuiKey_LeftShift) || IsKeyDown(ImGuiKey_RightShift));
     //IM_ASSERT(g.IO.KeyAlt == IsKeyDown(ImGuiKey_LeftAlt) || IsKeyDown(ImGuiKey_RightAlt));
     //IM_ASSERT(g.IO.KeySuper == IsKeyDown(ImGuiKey_LeftSuper) || IsKeyDown(ImGuiKey_RightSuper));
+
+    // Drag and drop
+    g.DragDropAcceptIdPrev = g.DragDropAcceptIdCurr;
+    g.DragDropAcceptIdCurr = 0;
+    g.DragDropAcceptFlagsPrev = g.DragDropAcceptFlagsCurr;
+    g.DragDropAcceptFlagsCurr = ImGuiDragDropFlags_None;
+    g.DragDropAcceptIdCurrRectSurface = FLT_MAX;
+    g.DragDropWithinSource = false;
+    g.DragDropWithinTarget = false;
+    g.DragDropHoldJustPressedId = 0;
+    if (g.DragDropActive)
+    {
+        // Also works when g.ActiveId==0 (aka leftover payload in progress, no active id)
+        // You may disable this externally by hijacking the input route:
+        //  'if (GetDragDropPayload() != NULL) { Shortcut(ImGuiKey_Escape, ImGuiInputFlags_RouteGlobal | ImGuiInputFlags_RouteOverActive); }
+        // but you will not get a return value from Shortcut() due to ActiveIdUsingAllKeyboardKeys logic. You can however poll IsKeyPressed(ImGuiKey_Escape) afterwards.
+        ImGuiID owner_id = g.ActiveId ? g.ActiveId : ImHashStr("##DragDropCancelHandler");
+        if (Shortcut(ImGuiKey_Escape, ImGuiInputFlags_RouteGlobal, owner_id))
+        {
+            ClearActiveID();
+            ClearDragDrop();
+        }
+    }
+    g.TooltipPreviousWindow = NULL;
 
     // Update keyboard/gamepad navigation
     NavUpdate();
@@ -5898,7 +5916,7 @@ static int IMGUI_CDECL ChildWindowComparer(const void* lhs, const void* rhs)
         return d;
     if (int d = (a->Flags & ImGuiWindowFlags_Tooltip) - (b->Flags & ImGuiWindowFlags_Tooltip))
         return d;
-    return (a->BeginOrderWithinParent - b->BeginOrderWithinParent);
+    return a->BeginOrderWithinParent - b->BeginOrderWithinParent;
 }
 
 static void AddWindowToSortBuffer(ImVector<ImGuiWindow*>* out_sorted_windows, ImGuiWindow* window)
@@ -6445,7 +6463,7 @@ bool ImGui::IsItemDeactivated()
     ImGuiContext& g = *GImGui;
     if (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HasDeactivated)
         return (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_Deactivated) != 0;
-    return (g.DeactivatedItemData.ID == g.LastItemData.ID && g.LastItemData.ID != 0 && g.DeactivatedItemData.ElapseFrame >= g.FrameCount);
+    return g.DeactivatedItemData.ID == g.LastItemData.ID && g.LastItemData.ID != 0 && g.DeactivatedItemData.ElapseFrame >= g.FrameCount;
 }
 
 bool ImGui::IsItemDeactivatedAfterEdit()
@@ -6891,13 +6909,13 @@ static inline ImVec2 CalcWindowMinSize(ImGuiWindow* window)
     ImVec2 size_min;
     if ((window->Flags & ImGuiWindowFlags_ChildWindow) && !(window->Flags & ImGuiWindowFlags_Popup))
     {
-        size_min.x = (window->ChildFlags & ImGuiChildFlags_ResizeX) ? g.Style.WindowMinSize.x : 4.0f;
-        size_min.y = (window->ChildFlags & ImGuiChildFlags_ResizeY) ? g.Style.WindowMinSize.y : 4.0f;
+        size_min.x = (window->ChildFlags & ImGuiChildFlags_ResizeX) ? g.Style.WindowMinSize.x : IMGUI_WINDOW_HARD_MIN_SIZE;
+        size_min.y = (window->ChildFlags & ImGuiChildFlags_ResizeY) ? g.Style.WindowMinSize.y : IMGUI_WINDOW_HARD_MIN_SIZE;
     }
     else
     {
-        size_min.x = ((window->Flags & ImGuiWindowFlags_AlwaysAutoResize) == 0) ? g.Style.WindowMinSize.x : 4.0f;
-        size_min.y = ((window->Flags & ImGuiWindowFlags_AlwaysAutoResize) == 0) ? g.Style.WindowMinSize.y : 4.0f;
+        size_min.x = ((window->Flags & ImGuiWindowFlags_AlwaysAutoResize) == 0) ? g.Style.WindowMinSize.x : IMGUI_WINDOW_HARD_MIN_SIZE;
+        size_min.y = ((window->Flags & ImGuiWindowFlags_AlwaysAutoResize) == 0) ? g.Style.WindowMinSize.y : IMGUI_WINDOW_HARD_MIN_SIZE;
     }
 
     // Reduce artifacts with very small windows
@@ -10018,7 +10036,7 @@ int ImGui::CalcTypematicRepeatAmount(float t0, float t1, float repeat_delay, flo
     if (t0 >= t1)
         return 0;
     if (repeat_rate <= 0.0f)
-        return (t0 < repeat_delay) && (t1 >= repeat_delay);
+        return t0 < repeat_delay && t1 >= repeat_delay;
     const int count_t0 = (t0 < repeat_delay) ? -1 : (int)((t0 - repeat_delay) / repeat_rate);
     const int count_t1 = (t1 < repeat_delay) ? -1 : (int)((t1 - repeat_delay) / repeat_rate);
     const int count = count_t1 - count_t0;
@@ -10961,12 +10979,13 @@ static const char* GetMouseSourceName(ImGuiMouseSource source)
 static void DebugPrintInputEvent(const char* prefix, const ImGuiInputEvent* e)
 {
     ImGuiContext& g = *GImGui;
+    char buf[5];
     if (e->Type == ImGuiInputEventType_MousePos)    { if (e->MousePos.PosX == -FLT_MAX && e->MousePos.PosY == -FLT_MAX) IMGUI_DEBUG_LOG_IO("[io] %s: MousePos (-FLT_MAX, -FLT_MAX)\n", prefix); else IMGUI_DEBUG_LOG_IO("[io] %s: MousePos (%.1f, %.1f) (%s)\n", prefix, e->MousePos.PosX, e->MousePos.PosY, GetMouseSourceName(e->MousePos.MouseSource)); return; }
     if (e->Type == ImGuiInputEventType_MouseButton) { IMGUI_DEBUG_LOG_IO("[io] %s: MouseButton %d %s (%s)\n", prefix, e->MouseButton.Button, e->MouseButton.Down ? "Down" : "Up", GetMouseSourceName(e->MouseButton.MouseSource)); return; }
     if (e->Type == ImGuiInputEventType_MouseWheel)  { IMGUI_DEBUG_LOG_IO("[io] %s: MouseWheel (%.3f, %.3f) (%s)\n", prefix, e->MouseWheel.WheelX, e->MouseWheel.WheelY, GetMouseSourceName(e->MouseWheel.MouseSource)); return; }
     if (e->Type == ImGuiInputEventType_MouseViewport){IMGUI_DEBUG_LOG_IO("[io] %s: MouseViewport (0x%08X)\n", prefix, e->MouseViewport.HoveredViewportID); return; }
     if (e->Type == ImGuiInputEventType_Key)         { IMGUI_DEBUG_LOG_IO("[io] %s: Key \"%s\" %s\n", prefix, ImGui::GetKeyName(e->Key.Key), e->Key.Down ? "Down" : "Up"); return; }
-    if (e->Type == ImGuiInputEventType_Text)        { IMGUI_DEBUG_LOG_IO("[io] %s: Text: %c (U+%08X)\n", prefix, e->Text.Char, e->Text.Char); return; }
+    if (e->Type == ImGuiInputEventType_Text)        { ImTextCharToUtf8(buf, e->Text.Char); IMGUI_DEBUG_LOG_IO("[io] %s: Text: '%s' (U+%08X)\n", prefix, buf, e->Text.Char); return; }
     if (e->Type == ImGuiInputEventType_Focus)       { IMGUI_DEBUG_LOG_IO("[io] %s: AppFocused %d\n", prefix, e->AppFocused.Focused); return; }
 }
 #endif
@@ -11147,7 +11166,7 @@ bool ImGui::TestKeyOwner(ImGuiKey key, ImGuiID owner_id)
 
     ImGuiKeyOwnerData* owner_data = GetKeyOwnerData(&g, key);
     if (owner_id == ImGuiKeyOwner_Any)
-        return (owner_data->LockThisFrame == false);
+        return owner_data->LockThisFrame == false;
 
     // Note: SetKeyOwner() sets OwnerCurr. It is not strictly required for most mouse routing overlap (because of ActiveId/HoveredId
     // are acting as filter before this has a chance to filter), but sane as soon as user tries to look into things.
@@ -14108,7 +14127,7 @@ bool ImGui::IsWindowFocused(ImGuiFocusedFlags flags)
     if (flags & ImGuiFocusedFlags_ChildWindows)
         return IsWindowChildOf(ref_window, cur_window, popup_hierarchy, dock_hierarchy);
     else
-        return (ref_window == cur_window);
+        return ref_window == cur_window;
 }
 
 static int ImGui::FindWindowFocusIndex(ImGuiWindow* window)
@@ -15337,11 +15356,17 @@ void ImGui::NavUpdateCreateMoveRequest()
     {
         ImRect nav_rect_rel = !window->NavRectRel[g.NavLayer].IsInverted() ? window->NavRectRel[g.NavLayer] : ImRect(0, 0, 0, 0);
         scoring_rect = WindowRectRelToAbs(window, nav_rect_rel);
-        if (scoring_page_offset_y != 0.0f)
+
+        if (g.NavMoveFlags & ImGuiNavMoveFlags_IsPageMove)
+        {
+            // When we start from a visible location, score visible items and prioritize this result.
+            if (window->InnerRect.Contains(scoring_rect))
+                g.NavMoveFlags |= ImGuiNavMoveFlags_AlsoScoreVisibleSet;
             g.NavScoringNoClipRect = scoring_rect;
-        scoring_rect.TranslateY(scoring_page_offset_y);
-        if (scoring_page_offset_y != 0.0f)
+            scoring_rect.TranslateY(scoring_page_offset_y);
             g.NavScoringNoClipRect.Add(scoring_rect);
+        }
+
         //GetForegroundDrawList()->AddRectFilled(scoring_rect.Min - ImVec2(1, 1), scoring_rect.Max + ImVec2(1, 1), IM_COL32(255, 100, 0, 80)); // [DEBUG] Pre-bias
         if (g.NavMoveSubmitted)
             NavBiasScoringRect(scoring_rect, window->RootWindowForNav->NavPreferredScoringPosRel[g.NavLayer], g.NavMoveDir, g.NavMoveFlags);
@@ -15593,14 +15618,14 @@ static float ImGui::NavUpdatePageUpPageDown()
             nav_scoring_rect_offset_y = -page_offset_y;
             g.NavMoveDir = ImGuiDir_Down; // Because our scoring rect is offset up, we request the down direction (so we can always land on the last item)
             g.NavMoveClipDir = ImGuiDir_Up;
-            g.NavMoveFlags = ImGuiNavMoveFlags_AllowCurrentNavId | ImGuiNavMoveFlags_AlsoScoreVisibleSet | ImGuiNavMoveFlags_IsPageMove;
+            g.NavMoveFlags = ImGuiNavMoveFlags_AllowCurrentNavId | ImGuiNavMoveFlags_IsPageMove; // ImGuiNavMoveFlags_AlsoScoreVisibleSet may be added later
         }
         else if (IsKeyPressed(ImGuiKey_PageDown, true))
         {
             nav_scoring_rect_offset_y = +page_offset_y;
             g.NavMoveDir = ImGuiDir_Up; // Because our scoring rect is offset down, we request the up direction (so we can always land on the last item)
             g.NavMoveClipDir = ImGuiDir_Down;
-            g.NavMoveFlags = ImGuiNavMoveFlags_AllowCurrentNavId | ImGuiNavMoveFlags_AlsoScoreVisibleSet | ImGuiNavMoveFlags_IsPageMove;
+            g.NavMoveFlags = ImGuiNavMoveFlags_AllowCurrentNavId | ImGuiNavMoveFlags_IsPageMove; // ImGuiNavMoveFlags_AlsoScoreVisibleSet may be added later
         }
         else if (home_pressed)
         {
@@ -22592,23 +22617,21 @@ void ImGui::UpdateDebugToolFlashStyleColor()
         DebugFlashStyleColorStop();
 }
 
-static const char* FormatTextureIDForDebugDisplay(char* buf, int buf_size, ImTextureID tex_id)
+ImU64 ImGui::DebugTextureIDToU64(ImTextureID tex_id)
 {
-    union { void* ptr; int integer; } tex_id_opaque;
-    memcpy(&tex_id_opaque, &tex_id, ImMin(sizeof(void*), sizeof(tex_id)));
-    if (sizeof(tex_id) >= sizeof(void*))
-        ImFormatString(buf, buf_size, "0x%p", tex_id_opaque.ptr);
-    else
-        ImFormatString(buf, buf_size, "0x%04X", tex_id_opaque.integer);
-    return buf;
+    ImU64 v = 0;
+    memcpy(&v, &tex_id, ImMin(sizeof(ImU64), sizeof(ImTextureID)));
+    return v;
 }
 
 static const char* FormatTextureRefForDebugDisplay(char* buf, int buf_size, ImTextureRef tex_ref)
 {
+    char* buf_p = buf;
     char* buf_end = buf + buf_size;
     if (tex_ref._TexData != NULL)
-        buf += ImFormatString(buf, buf_end - buf, "#%03d: ", tex_ref._TexData->UniqueID);
-    return FormatTextureIDForDebugDisplay(buf, (int)(buf_end - buf), tex_ref.GetTexID()); // Calling TexRef::GetTexID() to avoid assert of cmd->GetTexID()
+        buf_p += ImFormatString(buf_p, buf_end - buf_p, "#%03d: ", tex_ref._TexData->UniqueID);
+    ImFormatString(buf_p, buf_end - buf_p, "0x%X", ImGui::DebugTextureIDToU64(tex_ref.GetTexID()));
+    return buf;
 }
 
 #ifdef IMGUI_ENABLE_FREETYPE
@@ -22794,9 +22817,9 @@ void ImGui::DebugNodeTexture(ImTextureData* tex, int int_id, const ImFontAtlasRe
         }
         PopStyleVar();
 
-        char texid_desc[30];
+        char texref_desc[30];
         Text("Status = %s (%d), Format = %s (%d), UseColors = %d", ImTextureDataGetStatusName(tex->Status), tex->Status, ImTextureDataGetFormatName(tex->Format), tex->Format, tex->UseColors);
-        Text("TexID = %s, BackendUserData = %p", FormatTextureRefForDebugDisplay(texid_desc, IM_ARRAYSIZE(texid_desc), tex->GetTexRef()), tex->BackendUserData);
+        Text("TexRef = %s, BackendUserData = %p", FormatTextureRefForDebugDisplay(texref_desc, IM_ARRAYSIZE(texref_desc), tex->GetTexRef()), tex->BackendUserData);
         TreePop();
     }
     PopID();
