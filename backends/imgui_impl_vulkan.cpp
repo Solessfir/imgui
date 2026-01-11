@@ -29,6 +29,7 @@
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
 //  2025-XX-XX: Platform: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2026-01-05: Vulkan: Helper for creating render pass uses ImGui_ImplVulkanH_Window::AttachmentDesc to create render pass. Removed ClearEnabled. (#9152)
 //  2025-11-24: Vulkan: Helper for creating a swap-chain (used by examples and multi-viewports) selects VkSwapchainCreateInfoKHR's compositeAlpha based on cap.supportedCompositeAlpha. (#8784)
 //  2025-11-13: [Docking] Handle viewport surface creation failure without crashing. (#9068)
 //  2025-10-15: Vulkan: Added IMGUI_IMPL_VULKAN_VOLK_FILENAME to configure path to volk.h header. (#9008)
@@ -1033,7 +1034,7 @@ static VkPipeline ImGui_ImplVulkan_CreatePipeline(VkDevice device, const VkAlloc
     VkDynamicState dynamic_states[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     VkPipelineDynamicStateCreateInfo dynamic_state = {};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.dynamicStateCount = (uint32_t)IM_ARRAYSIZE(dynamic_states);
+    dynamic_state.dynamicStateCount = (uint32_t)IM_COUNTOF(dynamic_states);
     dynamic_state.pDynamicStates = dynamic_states;
 
     VkGraphicsPipelineCreateInfo create_info = {};
@@ -1716,7 +1717,7 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
         check_vk_result(err);
         VkImage backbuffers[16] = {};
         IM_ASSERT(wd->ImageCount >= min_image_count);
-        IM_ASSERT(wd->ImageCount < IM_ARRAYSIZE(backbuffers));
+        IM_ASSERT(wd->ImageCount < IM_COUNTOF(backbuffers));
         err = vkGetSwapchainImagesKHR(device, wd->Swapchain, &wd->ImageCount, backbuffers);
         check_vk_result(err);
 
@@ -1734,15 +1735,9 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
     // Create the Render Pass
     if (wd->UseDynamicRendering == false)
     {
-        VkAttachmentDescription attachment = {};
-        attachment.format = wd->SurfaceFormat.format;
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachment.loadOp = wd->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        VkAttachmentDescription attachment = wd->AttachmentDesc;
+        if (attachment.format == VK_FORMAT_UNDEFINED)
+            attachment.format = wd->SurfaceFormat.format;
         VkAttachmentReference color_attachment = {};
         color_attachment.attachment = 0;
         color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -2007,12 +2002,12 @@ static void ImGui_ImplVulkan_CreateWindow(ImGuiViewport* viewport)
     // Select Present Mode
     // FIXME-VULKAN: Even thought mailbox seems to get us maximum framerate with a single window, it halves framerate with a second window etc. (w/ Nvidia and SDK 1.82.1)
     VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR };
-    wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(v->PhysicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
+    wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(v->PhysicalDevice, wd->Surface, &present_modes[0], IM_COUNTOF(present_modes));
     //printf("[vulkan] Secondary window selected PresentMode = %d\n", wd->PresentMode);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
-    wd->ClearEnable = (viewport->Flags & ImGuiViewportFlags_NoRendererClear) ? false : true;
     wd->UseDynamicRendering = v->UseDynamicRendering;
+    wd->AttachmentDesc.loadOp = (viewport->Flags & ImGuiViewportFlags_NoRendererClear) ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : VK_ATTACHMENT_LOAD_OP_CLEAR;
     ImGui_ImplVulkanH_CreateOrResizeWindow(v->Instance, v->PhysicalDevice, v->Device, wd, v->QueueFamily, v->Allocator, (int)viewport->Size.x, (int)viewport->Size.y, v->MinImageCount, pipeline_info->SwapChainImageUsage);
     vd->WindowOwned = true;
 
@@ -2057,7 +2052,8 @@ static void ImGui_ImplVulkan_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
     if (vd == nullptr) // This is nullptr for the main viewport (which is left to the user/app to handle)
         return;
     ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
-    vd->Window.ClearEnable = (viewport->Flags & ImGuiViewportFlags_NoRendererClear) ? false : true;
+    ImGui_ImplVulkanH_Window* wd = &vd->Window;
+    wd->AttachmentDesc.loadOp = (viewport->Flags & ImGuiViewportFlags_NoRendererClear) ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : VK_ATTACHMENT_LOAD_OP_CLEAR;
     ImGui_ImplVulkanH_CreateOrResizeWindow(v->Instance, v->PhysicalDevice, v->Device, &vd->Window, v->QueueFamily, v->Allocator, (int)size.x, (int)size.y, v->MinImageCount, v->PipelineInfoForViewports.SwapChainImageUsage);
 }
 
