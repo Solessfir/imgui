@@ -1,0 +1,58 @@
+project "ImGui"
+    kind "StaticLib"
+    language "C++"
+    cppdialect "C++23"
+    staticruntime "off"
+
+    targetdir ("../../../Binaries/" .. outputdir .. "/%{prj.name}")
+    objdir ("../../../Intermediate/" .. outputdir .. "/%{prj.name}")
+
+    files {
+        "imgui.h",
+        "imgui.cpp",
+        "imgui_internal.h",
+        "imconfig.h",
+        "imgui_draw.cpp",
+        "imgui_tables.cpp",
+        "imgui_widgets.cpp",
+        "imstb_rectpack.h",
+        "imstb_textedit.h",
+        "imstb_truetype.h",
+        "imgui_demo.cpp",
+        "backends/imgui_impl_glfw.h",
+        "backends/imgui_impl_glfw.cpp",
+        "backends/imgui_impl_vulkan.h",
+        "backends/imgui_impl_vulkan.cpp",
+        "misc/cpp/imgui_stdlib.h",
+        "misc/cpp/imgui_stdlib.cpp",
+    }
+
+    includedirs {
+        "../ImGui",
+        "../GLFW/include",
+        VULKAN_SDK .. "/Include"
+    }
+
+    filter "system:windows"
+        systemversion "latest"
+        cppdialect "C++23"
+        defines { "_GLFW_WIN32" }
+
+    filter "system:linux"
+        pic "On"
+        systemversion "latest"
+        cppdialect "C++23"
+        defines { "_GLFW_WAYLAND" }
+
+    filter "configurations:Debug"
+        runtime "Debug"
+        symbols "on"
+
+    filter "configurations:Development"
+        runtime "Release"
+        optimize "on"
+
+    filter "configurations:Shipping"
+        runtime "Release"
+        optimize "on"
+        symbols "off"
