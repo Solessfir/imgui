@@ -3429,6 +3429,7 @@ struct ImDrawListSplitter
     IMGUI_API void              Split(ImDrawList* draw_list, int count);
     IMGUI_API void              Merge(ImDrawList* draw_list);
     IMGUI_API void              SetCurrentChannel(ImDrawList* draw_list, int channel_idx);
+    IMGUI_API void              SwapChannels(ImDrawList* draw_list, int channel_a, int channel_b); // Reorder channel contents while retaining the current channel index.
 };
 
 // Flags for ImDrawList functions

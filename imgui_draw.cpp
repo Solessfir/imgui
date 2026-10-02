@@ -2264,6 +2264,21 @@ void ImDrawListSplitter::Merge(ImDrawList* draw_list)
     _Count = 1;
 }
 
+void ImDrawListSplitter::SwapChannels(ImDrawList* draw_list, int channel_a, int channel_b)
+{
+    IM_ASSERT(channel_a >= 0 && channel_a < _Count && channel_b >= 0 && channel_b < _Count);
+    if (channel_a == channel_b)
+        return;
+
+    const int current_channel = _Current;
+    SetCurrentChannel(draw_list, channel_a);
+    draw_list->CmdBuffer.swap(_Channels[channel_b]._CmdBuffer);
+    draw_list->IdxBuffer.swap(_Channels[channel_b]._IdxBuffer);
+    // Switching channels synchronizes the active buffer alias, write pointer and command header.
+    SetCurrentChannel(draw_list, channel_b);
+    SetCurrentChannel(draw_list, current_channel);
+}
+
 void ImDrawListSplitter::SetCurrentChannel(ImDrawList* draw_list, int idx)
 {
     IM_ASSERT(idx >= 0 && idx < _Count);
