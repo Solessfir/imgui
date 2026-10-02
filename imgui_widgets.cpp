@@ -1260,7 +1260,9 @@ bool ImGui::Checkbox(const char* label, bool* v)
     const char* label_end = FindRenderedTextEnd(label);
     const ImVec2 label_size = CalcTextSize(label, label_end, false);
 
-    const float square_sz = GetFrameHeight();
+    // Size the box to the font so large frame padding does not inflate it; it is centered on the frame row.
+    const float frame_height = GetFrameHeight();
+    const float square_sz = ImMin(frame_height, IM_TRUNC(g.FontSize * 1.25f));
     const ImVec2 pos = window->DC.CursorPos;
     const ImRect total_bb(pos, pos + ImVec2(square_sz + (label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f), label_size.y + style.FramePadding.y * 2.0f));
     ItemSize(total_bb, style.FramePadding.y);
@@ -1294,7 +1296,8 @@ bool ImGui::Checkbox(const char* label, bool* v)
         MarkItemEdited(id);
     }
 
-    const ImRect check_bb(pos, pos + ImVec2(square_sz, square_sz));
+    const ImVec2 check_pos(pos.x, pos.y + IM_TRUNC((frame_height - square_sz) * 0.5f));
+    const ImRect check_bb(check_pos, check_pos + ImVec2(square_sz, square_sz));
     const bool mixed_value = (g.LastItemData.ItemFlags & ImGuiItemFlags_MixedValue) != 0;
     if (is_visible)
     {
@@ -1315,7 +1318,7 @@ bool ImGui::Checkbox(const char* label, bool* v)
             RenderCheckMark(window->DrawList, check_bb.Min + ImVec2(pad, pad), check_col, square_sz - pad * 2.0f);
         }
     }
-    const ImVec2 label_pos = ImVec2(check_bb.Max.x + style.ItemInnerSpacing.x, check_bb.Min.y + style.FramePadding.y);
+    const ImVec2 label_pos = ImVec2(check_bb.Max.x + style.ItemInnerSpacing.x, pos.y + style.FramePadding.y);
     if (g.LogEnabled)
         LogRenderedText(&label_pos, mixed_value ? "[~]" : *v ? "[x]" : "[ ]");
     if (is_visible && label_size.x > 0.0f)
@@ -9835,7 +9838,8 @@ bool ImGui::MenuItemEx(const char* label, const char* icon, const char* shortcut
                 PopStyleColor();
             }
             if (selected)
-                RenderCheckMark(window->DrawList, text_pos + ImVec2(offsets->OffsetMark + stretch_w + g.FontSize * 0.40f, g.FontSize * 0.134f * 0.5f), GetColorU32(ImGuiCol_Text), g.FontSize * 0.866f);
+                // Smaller accent-colored mark with the same center as upstream's text-colored one.
+                RenderCheckMark(window->DrawList, text_pos + ImVec2(offsets->OffsetMark + stretch_w + g.FontSize * 0.458f, g.FontSize * 0.125f), GetColorU32(ImGuiCol_CheckMark), g.FontSize * 0.75f);
         }
     }
     style.SelectableRounding = backup_rounding;

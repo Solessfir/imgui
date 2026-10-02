@@ -6108,7 +6108,8 @@ void ImGui::RenderBullet(ImDrawList* draw_list, ImVec2 pos, ImU32 col)
 
 void ImGui::RenderCheckMark(ImDrawList* draw_list, ImVec2 pos, ImU32 col, float sz)
 {
-    float thickness = ImMax(sz / 5.0f, 1.0f);
+    // Thinner than upstream (sz / 5) so marks stay light at editor sizes.
+    float thickness = ImMax(sz / 7.0f, 1.0f);
     sz -= thickness * 0.5f;
     pos += ImVec2(thickness * 0.25f, thickness * 0.25f);
 
