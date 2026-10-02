@@ -6,6 +6,9 @@ This branch follows upstream docking. Upstream copyright and license notices rem
 - `ImDrawListSplitter::SwapChannels(draw_list, channel_a, channel_b)` exchanges channel contents without changing shared vertices or the current channel index. It synchronizes command headers and index write pointers so drawing can continue before `Merge`. Both indices must belong to the active split.
 - Horizontal sliders draw their value as a `SliderGrab` fill from the left edge, with frame rounding, instead of a grab block that covers the value text. Vertical sliders keep the grab.
 - Checkboxes size their box to the font (at most the frame height) and center it on the frame row, so large frame padding does not inflate them.
+- Combos draw one frame with a chevron instead of a separately filled arrow button.
+- Close buttons use a rounded hover background and a smaller cross that dims when not hovered.
 - Check marks use a thinner stroke (`sz / 7`). Menu item marks are smaller and use `ImGuiCol_CheckMark` instead of the text color.
+- `RenderArrow()` draws a thin chevron instead of a filled triangle, so tree nodes, collapsing headers, submenus, and arrow buttons share the combo chevron style.
 
 The fork does not own Herta's glass rendering, themes, editor widgets, or platform policy. Channel-reordering regression tests run in Herta's `HertaTests` target.

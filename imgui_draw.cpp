@@ -6080,23 +6080,25 @@ void ImGui::RenderArrow(ImDrawList* draw_list, ImVec2 pos, ImU32 col, ImGuiDir d
     case ImGuiDir_Up:
     case ImGuiDir_Down:
         if (dir == ImGuiDir_Up) r = -r;
-        a = ImVec2(+0.000f, +0.750f) * r;
-        b = ImVec2(-0.866f, -0.750f) * r;
-        c = ImVec2(+0.866f, -0.750f) * r;
+        a = ImVec2(+0.000f, +0.400f) * r;
+        b = ImVec2(-0.800f, -0.400f) * r;
+        c = ImVec2(+0.800f, -0.400f) * r;
         break;
     case ImGuiDir_Left:
     case ImGuiDir_Right:
         if (dir == ImGuiDir_Left) r = -r;
-        a = ImVec2(+0.750f, +0.000f) * r;
-        b = ImVec2(-0.750f, +0.866f) * r;
-        c = ImVec2(-0.750f, -0.866f) * r;
+        a = ImVec2(+0.400f, +0.000f) * r;
+        b = ImVec2(-0.400f, +0.800f) * r;
+        c = ImVec2(-0.400f, -0.800f) * r;
         break;
     case ImGuiDir_None:
     case ImGuiDir_COUNT:
         IM_ASSERT(0);
         break;
     }
-    draw_list->AddTriangleFilled(center + a, center + b, center + c, col);
+    // Thin chevron instead of a filled triangle, centered where the triangle was.
+    const ImVec2 chevron[3] = { center + b, center + a, center + c };
+    draw_list->AddPolyline(chevron, 3, col, ImDrawFlags_None, ImMax(1.0f, h / 12.0f));
 }
 
 void ImGui::RenderBullet(ImDrawList* draw_list, ImVec2 pos, ImU32 col)
