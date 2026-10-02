@@ -3441,9 +3441,20 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     if (value_changed)
         MarkItemEdited(id);
 
-    // Render grab
+    // Render the value as a fill from the left edge instead of a grab that covers the value text.
     if (grab_bb.Max.x > grab_bb.Min.x)
-        window->DrawList->AddRectFilled(grab_bb.Min, grab_bb.Max, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.GrabRounding);
+    {
+        const float grab_padding = 2.0f; // Matches SliderBehaviorT()
+        const float grab_travel = frame_bb.GetWidth() - grab_padding * 2.0f - grab_bb.GetWidth();
+        const float fill_ratio = grab_travel > 0.0f ? ImSaturate((grab_bb.Min.x - frame_bb.Min.x - grab_padding) / grab_travel) : 1.0f;
+        const float fill_x = IM_ROUND(ImLerp(frame_bb.Min.x, frame_bb.Max.x, fill_ratio));
+        if (fill_x > frame_bb.Min.x)
+        {
+            const ImDrawFlags fill_corners = fill_x >= frame_bb.Max.x ? ImDrawFlags_RoundCornersAll : ImDrawFlags_RoundCornersLeft;
+            window->DrawList->AddRectFilled(frame_bb.Min, ImVec2(fill_x, frame_bb.Max.y), GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.FrameRounding, fill_corners);
+            RenderFrameBorder(frame_bb.Min, frame_bb.Max, style.FrameRounding);
+        }
+    }
 
     // Display value using user-provided display format so user can add prefix/suffix/decorations to the value.
     const bool is_mixed = (g.LastItemData.ItemFlags & ImGuiItemFlags_MixedValue) != 0;
