@@ -7315,8 +7315,8 @@ void ImFont::RenderChar(ImDrawList* draw_list, float size, const ImVec2& pos, Im
     float y = pos.y;
     if ((draw_list->Flags & ImDrawFlags_TextNoPixelSnap) == 0)
     {
-        x = IM_TRUNC(x);
-        y = IM_TRUNC(y);
+        x = IM_ROUND(x * draw_list->_InvFringeScale) / draw_list->_InvFringeScale;
+        y = IM_ROUND(y * draw_list->_InvFringeScale) / draw_list->_InvFringeScale;
     }
 
     float x1 = x + glyph->X0 * scale;
@@ -7358,8 +7358,8 @@ begin:
     flags |= draw_list->Flags;
     if ((flags & ImDrawFlags_TextNoPixelSnap) == 0)
     {
-        x = IM_TRUNC(x);
-        y = IM_TRUNC(y);
+        x = IM_ROUND(x * draw_list->_InvFringeScale) / draw_list->_InvFringeScale;
+        y = IM_ROUND(y * draw_list->_InvFringeScale) / draw_list->_InvFringeScale;
     }
 
     if (!text_end)
