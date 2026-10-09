@@ -3447,8 +3447,10 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
         const float fill_x = IM_ROUND(ImLerp(frame_bb.Min.x, frame_bb.Max.x, fill_ratio));
         if (fill_x > frame_bb.Min.x)
         {
-            const ImDrawFlags fill_corners = fill_x >= frame_bb.Max.x ? ImDrawFlags_RoundCornersAll : ImDrawFlags_RoundCornersLeft;
-            window->DrawList->AddRectFilled(frame_bb.Min, ImVec2(fill_x, frame_bb.Max.y), GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.FrameRounding, fill_corners);
+            // Clip the frame's own rounded shape at the value, so short fills follow the rounded left edge instead of shrinking their corner radius.
+            window->DrawList->PushClipRect(frame_bb.Min, ImVec2(fill_x, frame_bb.Max.y), true);
+            window->DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.FrameRounding);
+            window->DrawList->PopClipRect();
             RenderFrameBorder(frame_bb.Min, frame_bb.Max, style.FrameRounding);
         }
     }
