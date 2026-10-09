@@ -10,5 +10,6 @@ This branch follows upstream docking. Upstream copyright and license notices rem
 - Close buttons use a rounded hover background and a smaller cross that dims when not hovered.
 - Check marks use a thinner stroke (`sz / 7`). Menu item marks are smaller and use `ImGuiCol_CheckMark` instead of the text color.
 - `RenderArrow()` draws a thin chevron instead of a filled triangle, so tree nodes, collapsing headers, submenus, and arrow buttons share the combo chevron style.
+- Proportional table stretch weights (`ImGuiTableFlags_SizingStretchProp`) fall back to equal weights while no column has measured content, instead of dividing 0 by 0 on a table's first frame. The NaN weight otherwise reaches window content sizes and trips UBSan.
 
 The fork does not own Herta's glass rendering, themes, editor widgets, or platform policy. Channel-reordering regression tests run in Herta's `HertaTests` target.
