@@ -9,5 +9,6 @@ This branch follows upstream docking. Upstream copyright and license notices rem
 - Combos draw one frame with a chevron instead of a separately filled arrow button.
 - Close buttons use a rounded hover background and a smaller cross that dims when not hovered.
 - Check marks use a thinner stroke (`sz / 7`). Menu item marks are smaller and use `ImGuiCol_CheckMark` instead of the text color.
+- Proportional table stretch weights (`ImGuiTableFlags_SizingStretchProp`) fall back to equal weights while no column has measured content, instead of dividing 0 by 0 on a table's first frame. The NaN weight otherwise reaches window content sizes and trips UBSan.
 
 The fork does not own Herta's glass rendering, themes, editor widgets, or platform policy. Channel-reordering regression tests run in Herta's `HertaTests` target.
